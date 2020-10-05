@@ -1,5 +1,4 @@
 # SpotifyNetwork
-___
 
 Trabalho para a disciplina de Redes Sociais 
 
