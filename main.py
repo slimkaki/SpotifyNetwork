@@ -8,6 +8,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from unidecode import unidecode
 import re
 import uuid
+import numpy as np
 
 
 class SpotData(object):
@@ -17,8 +18,7 @@ class SpotData(object):
         #self.client_secret = CLIENT_SECRET
         self.feats = {}
         self.artists = []
-
-
+        self.popularity = {}
 
     def get_csv_data(self):
         #------------------------------------------------------CODIGO NOJENTO ARRUMAR DPS-------------
@@ -31,7 +31,12 @@ class SpotData(object):
                 
                 title = unidecode(row[1])
                 artist = unidecode(row[2])
-                
+                popularity = row[14]
+
+                if artist not in self.popularity.keys():
+                    self.popularity[artist] = []
+
+                self.popularity[artist].append(popularity)
 
                 if artist not in self.artists:
                     self.artists.append(artist)
@@ -53,6 +58,10 @@ class SpotData(object):
                     for f in feat:                       
                         if f not in self.artists:
                             self.artists.append(f)
+                        if f not in self.popularity.keys():
+                            self.popularity[f] = []
+                        self.popularity[f].append(popularity)
+                        
  
                 except ValueError:
                     continue
@@ -73,7 +82,9 @@ class SpotData(object):
             for n in self.artists:
                 file.write('  node [\n')
                 file.write('    id "{}"\n'.format(n))
+                #file.write('    pop "{}"\n'.format(np.median(np.array(self.popularity[n]).astype(np.float32))))
                 file.write('  ]\n')
+                #print("{0} : {1}"np.median(np.array(self.popularity[n]).astype(np.float32)))
 
             for source in self.feats.keys():
                 for target in self.feats[source]:
@@ -89,12 +100,17 @@ class SpotData(object):
 
     def drawPrint(self):
         print("{")
-        for i in self.feats.keys():
-            print('\t"',str(i), '": [')
-            for j in self.feats[i]:
-                print('\t\t "', str(j), '",')
-            print("],")
+        for i in self.artists:
+            med = np.median(np.array(self.popularity[i]).astype(np.float32))
+            # norm = np.sum(med**2)
+            if (i == self.artists[-1]):
+                print(f'\t"{i}": {med}')
+            else:
+                print(f'\t"{i}": {med},')
         print("}")
+
+
+
 
     def start(self):
         self.get_csv_data()
@@ -104,4 +120,5 @@ if __name__ == '__main__':
     spot = SpotData(); #CLIENT_ID, CLIENT_SECRET)
     spot.get_csv_data();
     spot.writeGML();
+    spot.drawPrint();
     
